@@ -1,6 +1,6 @@
 # @basemaps/attribution
 
-Library to determine to applicable attribution for a given extent and zoom level.
+This Library is for use with the [LINZ basemaps](https://github.com/linz/basemaps) product. It determines the applicable attribution for the tiles within a given extent and zoom level.
 
 ## Usage
 
@@ -18,7 +18,7 @@ const attrList = attributions.filter([19455725.1, -5053732.8, 19456330.7, -50532
 const description = attributions.renderList(attrList);
 ```
 
-Using a CDN see https://basemaps.linz.govt.nz/examples/index.openlayers.attribution.wmts.3857.html.
+Using this from a CDN: see the attribution example at https://basemaps.linz.govt.nz/examples
 
 ## License
 
