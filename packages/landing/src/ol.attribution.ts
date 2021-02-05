@@ -1,9 +1,7 @@
-import { AttributionCollection, Stac } from '@basemaps/geo';
 import { Attribution } from '@basemaps/attribution';
+import { AttributionCollection, Stac } from '@basemaps/geo';
 import { View } from 'ol';
 import { Extent } from 'ol/extent';
-import OlMap from 'ol/Map';
-import MapEventType from 'ol/MapEventType';
 import Source from 'ol/source/Source';
 import { MapOptions, MapOptionType, WindowUrl } from './url';
 
@@ -35,18 +33,6 @@ export class OlAttribution {
     extent: Extent = [0, 0, 0, 0];
     zoom = -1;
     filteredRecords: AttributionCollection[] = [];
-
-    /**
-     * Initialize monitoring the OpenLayers map and set the source attributions when changed.
-     */
-    static init(source: Source, map: OlMap, config: MapOptions): void {
-        const attribution = new OlAttribution(source, map.getView(), config);
-
-        map.addEventListener(MapEventType.MOVEEND, (): boolean => {
-            attribution.updateAttribution();
-            return true;
-        });
-    }
 
     constructor(source: Source, view: View, config: MapOptions) {
         this.source = source;

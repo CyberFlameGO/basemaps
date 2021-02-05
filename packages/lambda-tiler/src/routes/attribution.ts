@@ -22,11 +22,11 @@ import {
 import { BBox, MultiPolygon, multiPolygonToWgs84, Pair, union, Wgs84 } from '@linzjs/geojson';
 import { TileSet } from '../tile.set';
 import { loadTileSet } from '../tile.set.cache';
+import { Responses } from './api';
+import { loadFilesFromTileSet } from './imagery.files';
 
 /** Amount to pad imagery bounds to avoid fragmenting polygons  */
 const SmoothPadding = 1 + 1e-10; // about 1/100th of a millimeter at equator
-
-const NotFound = new LambdaHttpResponse(404, 'Not Found');
 
 const Precision = 10 ** 8;
 
@@ -69,17 +69,6 @@ function createCoordinates(bbox: BBox, files: NamedBounds[], proj: Projection): 
     return multiPolygonToWgs84(coordinates, roundToWgs84);
 }
 
-async function readStac(uri: string): Promise<StacCollection | null> {
-    try {
-        return await FileOperator.readJson<StacCollection>(uri);
-    } catch (err) {
-        if (FileOperator.isCompositeError(err) && err.code < 500) {
-            return null;
-        }
-        throw err;
-    }
-}
-
 /** Attempt to find the GSD from a stack summary object */
 function getGsd(un?: Record<string, unknown>): number | null {
     if (un == null) return null;
@@ -98,18 +87,9 @@ function getGsd(un?: Record<string, unknown>): number | null {
  */
 async function tileSetAttribution(tileSet: TileSet): Promise<AttributionStac | null> {
     const proj = Projection.get(tileSet.projection.code);
-    const stacFiles = new Map<string, Promise<StacCollection | null>>();
+    const stacFiles = loadFilesFromTileSet<StacCollection>(tileSet, 'collection.json');
     const cols: AttributionCollection[] = [];
     const items: AttributionItem[] = [];
-
-    // read all stac files in parallel
-    for (const rule of tileSet.tileSet.rules) {
-        const im = tileSet.imagery.get(rule.imgId);
-        if (im == null) continue;
-        if (stacFiles.get(im.uri) == null) {
-            stacFiles.set(im.uri, readStac(FileOperator.join(im.uri, 'collection.json')));
-        }
-    }
 
     const host = await Aws.tileMetadata.Provider.get(TileMetadataNamedTag.Production);
     if (host == null) return null;
@@ -186,13 +166,13 @@ async function tileSetAttribution(tileSet: TileSet): Promise<AttributionStac | n
  */
 export async function attribution(req: LambdaContext): Promise<LambdaHttpResponse> {
     const data = tileAttributionFromPath(req.action.rest);
-    if (data == null) return NotFound;
+    if (data == null) return Responses.NotFound;
     setNameAndProjection(req, data);
 
     req.timer.start('tileset:load');
     const tileSet = await loadTileSet(data.name, data.projection);
     req.timer.end('tileset:load');
-    if (tileSet == null) return NotFound;
+    if (tileSet == null) return Responses.NotFound;
 
     const cacheKey = `v1.${tileSet.tileSet.version}`; // change version if format changes
 
@@ -206,7 +186,7 @@ export async function attribution(req: LambdaContext): Promise<LambdaHttpRespons
     const attributions = await tileSetAttribution(tileSet);
     req.timer.end('stac:load');
 
-    if (attributions == null) return NotFound;
+    if (attributions == null) return Responses.NotFound;
 
     const response = new LambdaHttpResponse(200, 'ok');
 

@@ -15,6 +15,7 @@ import { OlAttribution } from './ol.attribution';
 import { gaEvent, GaEvent } from './config';
 import { NztmOl } from './nztm2000';
 import { MapLocation, MapOptions, MapOptionType, WindowUrl } from './url';
+import MapEventType from 'ol/MapEventType';
 
 /** Projection to use for the URL bar */
 const UrlProjection = Epsg.Wgs84.toEpsgString();
@@ -49,6 +50,7 @@ export class Basemaps {
     tileTimer: Map<string, number> = new Map();
     /** Duration in ms for each tile loaded */
     tileLoadTimes: number[] = [];
+    attribution: OlAttribution;
 
     constructor(target: HTMLElement) {
         this.el = target;
@@ -129,7 +131,11 @@ export class Basemaps {
             keyboardEventTarget: document,
         });
 
-        OlAttribution.init(source, this.map, this.config);
+        this.attribution = new OlAttribution(source, this.map.getView(), this.config);
+        this.map.addEventListener(MapEventType.MOVEEND, (): boolean => {
+            this.attribution.updateAttribution();
+            return true;
+        });
 
         this.map.addEventListener('postrender', this.postRender);
     }

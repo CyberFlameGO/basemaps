@@ -18,15 +18,15 @@ import { TileSet } from '../tile.set';
 import { loadTileSet, loadTileSets } from '../tile.set.cache';
 import { Tilers } from '../tiler';
 import { WmtsCapabilities } from '../wmts.capability';
+import { Responses } from './api';
 import { attribution } from './attribution';
+import { source } from './source';
 import { TileEtag } from './tile.etag';
 
 export const TileComposer = new TileMakerSharp(256);
 const LoadingQueue = pLimit(Env.getNumber(Env.TiffConcurrency, 5));
 
 const DefaultResizeKernel = { in: 'lanczos3', out: 'lanczos3' } as const;
-
-const NotFound = new LambdaHttpResponse(404, 'Not Found');
 
 /** Initialize the tiffs before reading */
 async function initTiffs(tileSet: TileSet, tiler: Tiler, tile: Tile, ctx: LambdaContext): Promise<CogTiff[]> {
@@ -71,7 +71,7 @@ function projectionNotFound(projection: Epsg, altTms?: string): LambdaHttpRespon
 
 export async function tile(req: LambdaContext): Promise<LambdaHttpResponse> {
     const xyzData = tileXyzFromPath(req.action.rest);
-    if (xyzData == null) return NotFound;
+    if (xyzData == null) return Responses.NotFound;
     ValidateTilePath.validate(req, xyzData);
     const tiler = Tilers.get(xyzData.projection, xyzData.altTms);
     if (tiler == null) return projectionNotFound(xyzData.projection);
@@ -125,17 +125,17 @@ async function wmtsLoadTileSets(nameStr: string, projection: Epsg | null): Promi
 
 export async function wmts(req: LambdaContext): Promise<LambdaHttpResponse> {
     const wmtsData = tileWmtsFromPath(req.action.rest);
-    if (wmtsData == null) return NotFound;
+    if (wmtsData == null) return Responses.NotFound;
     setNameAndProjection(req, wmtsData);
     const host = Env.get(Env.PublicUrlBase) ?? '';
 
     req.timer.start('tileset:load');
     const tileSets = await wmtsLoadTileSets(wmtsData.name, wmtsData.projection);
     req.timer.end('tileset:load');
-    if (tileSets.length == 0) return NotFound;
+    if (tileSets.length == 0) return Responses.NotFound;
 
     const provider = await Aws.tileMetadata.Provider.get(TileMetadataNamedTag.Production);
-    if (provider == null) return NotFound;
+    if (provider == null) return Responses.NotFound;
 
     const tileMatrixSets = new Map<Epsg, TileMatrixSet>();
     if (wmtsData.projection == null) {
@@ -151,7 +151,7 @@ export async function wmts(req: LambdaContext): Promise<LambdaHttpResponse> {
     }
 
     const xml = WmtsCapabilities.toXml(host, provider, tileSets, tileMatrixSets, wmtsData.altTms, req.apiKey);
-    if (xml == null) return NotFound;
+    if (xml == null) return Responses.NotFound;
 
     const data = Buffer.from(xml);
 
@@ -170,11 +170,13 @@ export async function wmts(req: LambdaContext): Promise<LambdaHttpResponse> {
 const SubHandler: Record<string, (req: LambdaContext) => Promise<LambdaHttpResponse>> = {
     'WMTSCapabilities.xml': wmts,
     'attribution.json': attribution,
+    'source.json': source,
 };
 
 export async function Tiles(req: LambdaContext): Promise<LambdaHttpResponse> {
     const { rest } = req.action;
-    if (rest.length < 1) return NotFound;
+    console.log('Tiles', { rest });
+    if (rest.length < 1) return Responses.NotFound;
 
     const subHandler = SubHandler[rest[rest.length - 1]];
     if (subHandler != null) {

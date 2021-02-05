@@ -4,6 +4,10 @@ import TileLayer from 'ol/layer/Tile';
 import { Epsg } from '@basemaps/geo';
 import * as proj from 'ol/proj.js';
 import { e } from './elm';
+import VectorLayer from 'ol/layer/Vector';
+import VectorSource from 'ol/source/Vector';
+import GeoJSON from 'ol/format/GeoJSON';
+import { MapOptionType, WindowUrl } from './url';
 
 function round(max: number): (c: number) => number {
     const decimals = 10 ** max;
@@ -19,6 +23,25 @@ function kv(key: string, value: string | HTMLElement): { value: HTMLElement; con
         valueEl,
     ]);
     return { value: valueEl, container: containerEl };
+}
+
+function layerToggleButton(name: string, url: string, bm: Basemaps): HTMLElement {
+    const sourceExtentCheck = e('input', { type: 'checkbox' }) as HTMLInputElement;
+    const sourceExtentButton = kv(name, sourceExtentCheck);
+    const sourceLayer = new VectorLayer({
+        source: new VectorSource({
+            format: new GeoJSON(),
+            url,
+        }),
+    });
+    sourceExtentCheck.onclick = (): void => {
+        if (sourceExtentCheck.checked) {
+            bm.map.addLayer(sourceLayer);
+        } else {
+            bm.map.removeLayer(sourceLayer);
+        }
+    };
+    return sourceExtentButton.container;
 }
 
 export function addDebugLayer(bm: Basemaps): void {
@@ -49,6 +72,15 @@ export function addDebugLayer(bm: Basemaps): void {
         }
     };
     debugEl.appendChild(colorButton.container);
+
+    // Show the attribution extent the background colors
+    const attrEl = layerToggleButton('Attribution', WindowUrl.toTileUrl(bm.config, MapOptionType.Attribution), bm);
+    debugEl.appendChild(attrEl);
+
+    // Show the source extent the background colors
+    const sourceEl = layerToggleButton('Source', WindowUrl.toTileUrl(bm.config, MapOptionType.Source), bm);
+    debugEl.appendChild(sourceEl);
+
     // Add a debug OSM layer
     const osmLayer = new TileLayer({ source: new OSM({}), className: 'osm' });
     const osmRange = e('input', {

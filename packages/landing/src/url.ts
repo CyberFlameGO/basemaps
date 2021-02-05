@@ -19,6 +19,7 @@ export const enum MapOptionType {
     TileWmts = 'tile-wmts',
     Wmts = 'wmts',
     Attribution = 'attribution',
+    Source = 'source',
 }
 
 export function baseWindowUrl(): string {
@@ -107,6 +108,10 @@ export const WindowUrl = {
 
         if (urlType == MapOptionType.Attribution) {
             return `${baseTileUrl}/attribution.json${api}`;
+        }
+
+        if (urlType == MapOptionType.Source) {
+            return `${baseTileUrl}/source.json${api}`;
         }
 
         throw new Error('Unknown url type: ' + urlType);

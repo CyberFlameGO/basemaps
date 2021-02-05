@@ -1,14 +1,19 @@
 import { LambdaHttpResponse, HttpHeader } from '@basemaps/lambda';
 
-const OkResponse = new LambdaHttpResponse(200, 'ok');
-OkResponse.header(HttpHeader.CacheControl, 'no-store');
+export const Responses = {
+    Ok: new LambdaHttpResponse(200, 'ok'),
+    NotModified: new LambdaHttpResponse(304, 'Not modified'),
+    NotFound: new LambdaHttpResponse(404, 'Not Found'),
+};
 
-export async function Health(): Promise<LambdaHttpResponse> {
-    return OkResponse;
-}
+Responses.Ok.header(HttpHeader.CacheControl, 'no-store');
+
+// export async function Health(): Promise<LambdaHttpResponse> {
+//     return Responses.Ok;
+// }
 
 export async function Ping(): Promise<LambdaHttpResponse> {
-    return OkResponse;
+    return Responses.Ok;
 }
 
 export async function Version(): Promise<LambdaHttpResponse> {

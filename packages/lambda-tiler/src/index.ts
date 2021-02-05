@@ -13,6 +13,8 @@ app.get('tiles', Tiles);
 
 export async function handleRequest(req: LambdaContext): Promise<LambdaHttpResponse> {
     req.set('name', 'LambdaTiler');
+    req.log.info({}, 'LambdaStart');
+
     return await app.handle(req);
 }
 
