@@ -82,6 +82,7 @@ export interface TileJson {
     maxzoom: number;
     format: string;
     tilejson: string;
+    vector_layers: [];
 }
 
 export async function tileJson(req: LambdaContext): Promise<LambdaHttpResponse> {
@@ -95,6 +96,7 @@ export async function tileJson(req: LambdaContext): Promise<LambdaHttpResponse> 
         maxzoom: 15,
         format: 'pbf',
         tilejson: '2.0.0',
+        vector_layers: [],
     };
 
     const json = JSON.stringify(tileJson);

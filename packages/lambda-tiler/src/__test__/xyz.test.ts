@@ -179,7 +179,7 @@ o.spec('LambdaXyz', () => {
         });
 
         o('should 304 if a json is not modified', async () => {
-            const key = 'FlMeQJMKbBO4nMFOEC4/PG6wzFniA0uXfAxXkbV4L9g=';
+            const key = 'WLFgitI0/NWxWVlsurl4zGtQYeIxot3nwh3jaSYaHh4=';
             const request = mockRequest('/v1/tiles/tile.json', 'get', { 'if-none-match': key });
 
             const res = await handleRequest(request);
@@ -212,6 +212,7 @@ o.spec('LambdaXyz', () => {
                 maxzoom: 15,
                 format: 'pbf',
                 tilejson: '2.0.0',
+                vector_layers: [],
             });
         });
     });
