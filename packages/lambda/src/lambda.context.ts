@@ -34,6 +34,9 @@ export class LambdaContext {
     public evt: LambdaHttpRequestType;
     public apiKey: string | undefined;
 
+    /** Should this request have additional logging */
+    public isTrace = false;
+
     headers: Map<string, string> = new Map();
 
     constructor(evt: LambdaHttpRequestType, logger: LogType) {

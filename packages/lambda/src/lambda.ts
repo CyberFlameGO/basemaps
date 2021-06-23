@@ -1,4 +1,4 @@
-import { LogType } from '@basemaps/shared';
+import { LogType, Env } from '@basemaps/shared';
 import { Callback, Context } from 'aws-lambda';
 import { ApplicationJson, HttpHeader, HttpHeaderAmazon } from './header';
 import { LambdaContext, LambdaHttpRequestType, LambdaHttpReturnType } from './lambda.context';
@@ -26,11 +26,10 @@ export class LambdaFunction {
             callback: Callback<LambdaHttpReturnType>,
         ): Promise<void> => {
             // Log the lambda event for debugging
-            if (process.env['DEBUG']) {
-                logger.debug({ event }, 'LambdaDebug');
-            }
+            if (Env.get(Env.Debug)) logger.debug({ event }, 'LambdaDebug');
 
             const ctx = new LambdaContext(event, logger);
+            if (Env.getNumber(Env.TracePercent, 0) > Math.random()) ctx.isTrace = true;
             ctx.timer.start('lambda');
 
             // Trace cloudfront requests back to the cloudfront logs

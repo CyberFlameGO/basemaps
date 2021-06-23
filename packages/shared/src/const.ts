@@ -15,6 +15,11 @@ export const Const = {
 };
 
 export const Env = {
+    /** Should event Context be logged */
+    Debug: 'DEBUG',
+    /** Percent of requests that should have additional trace logging (0 - 1)*/
+    TracePercent: 'BASEMAPS_TRACE_PERCENT',
+
     /** Public URL base that tiles are served from */
     PublicUrlBase: 'BASEMAPS_PUBLIC_URL',
 
