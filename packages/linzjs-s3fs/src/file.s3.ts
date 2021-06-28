@@ -1,8 +1,10 @@
-import type S3 from 'aws-sdk/clients/s3';
 import type { AWSError } from 'aws-sdk/lib/error';
 import type { Readable, Stream } from 'stream';
 import { CompositeError } from './composite.error';
 import { FileInfo, FileSystem } from './file';
+import { ChainableTemporaryCredentials } from 'aws-sdk/lib/credentials/chainable_temporary_credentials';
+import S3 from 'aws-sdk/clients/s3';
+import type { Credentials } from 'aws-sdk/lib/credentials';
 
 function getCompositeError(e: AWSError, msg: string): CompositeError {
     if (typeof e?.statusCode === 'number') return new CompositeError(msg, e.statusCode, e);
@@ -38,6 +40,19 @@ export class FsS3 implements FileSystem {
         return { key, bucket };
     }
     parse = FsS3.parse;
+
+    static fromRole(roleArn: string, externalId?: string, masterCredentials?: Credentials): FsS3 {
+        const credentials = new ChainableTemporaryCredentials({
+            params: {
+                RoleArn: roleArn,
+                ExternalId: externalId,
+                RoleSessionName: `linzjs-s3fs-${Math.random().toString(32)}-${Date.now()}`,
+                DurationSeconds: 60 * 60,
+            },
+            masterCredentials,
+        });
+        return new FsS3(new S3({ credentials }));
+    }
 
     async *list(filePath: string): AsyncGenerator<string> {
         for await (const obj of this.listDetails(filePath)) yield obj.path;
